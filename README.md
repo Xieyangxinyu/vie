@@ -34,8 +34,6 @@ pip3 uninstall vie
 * If you used the local install option, you will also want to delete the ```.egg-info``` file located in the ```vie/``` directory of the package. This gets created automatically with ```pip3 install -e .```.
 
 ## Usage
-We provide a colab tutorial on how to use the package.
-
-https://colab.research.google.com/drive/174JPxk6-AKrjnyqkM1dvKtthPYJu31Sd?usp=sharing
+We provide a colab tutorial (tutorial.ipynb) on how to use the package.
 
 
