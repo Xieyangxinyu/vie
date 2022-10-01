@@ -2,7 +2,7 @@
 This is a simple and unified package for nonlinear variable importance estimation that incorporates uncertainty in the prediction function and is compatible with a wide range of machine learning models (e.g., tree ensembles, kernel methods, neural networks, etc). Below please find the detailed explanation of the package resources.
 
 * Github repo: https://github.com/wdeng5120/vie
-* PyPi: https://pypi.org/project/vie/0.0.1/
+* PyPi: https://pypi.org/project/vie/0.0.2/
 
 ## Prerequisites
 For Windows, it is recommended to run this app on a Linux emulation layer such as the Git Bash terminal. See the "Instructions for Git Bash" section for details. In addition to Git Bash, make sure you also have Python3 and Pip3 as described below.
