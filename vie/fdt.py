@@ -160,5 +160,5 @@ def get_fdt_model(x_train, y_train, c=1.0, sig2=0.01, n_tree=20, compute_psi=Tru
 
         grad_train = np.mean(psi_est_all ** 2, axis=(0, 1))
         psi_est = np.median(grad_train, axis=0)
-    return psi_est, f, grad_fs, out_set
+    return grad_train, f, grad_fs, out_set
 
