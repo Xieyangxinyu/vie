@@ -23,9 +23,10 @@ def plot_spectrum(y, y_diag, title):
     plt.show()
 
 def compute_derivative(q_tilde, d_q_tilde):
-    stable_sigmoid = lambda x: jnp.exp(jax.nn.log_sigmoid(x))
-    q = 2 * stable_sigmoid(q_tilde)
-    derivative = 2 * np.matmul(np.diag(q * (1-q)), d_q_tilde)
+    c = 0.5
+    stable_sigmoid = lambda x: jnp.exp(jax.nn.log_sigmoid(c * x))
+    q = stable_sigmoid(q_tilde)
+    derivative = c * np.matmul(np.diag(np.exp(np.log(q) + np.log(1-q))), d_q_tilde)
     return derivative
 
 def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta,
@@ -243,7 +244,7 @@ if __name__ == "__main__":
     data_path = os.path.join("./datasets/")
     
     dataset_name = 'cont' # @param ['cat', 'cont', 'adult', 'heart', 'mi'] 
-    outcome_type = 'linear' # @param ['linear', 'rbf', 'matern32', 'complex']
+    outcome_type = 'rbf' # @param ['linear', 'rbf', 'matern32', 'complex']
     n_obs = 200 # @param [100, 200, 500, 1000]
     dim_in = 25 # @param [25, 50, 100, 200]
     rep = 1 # @param 
