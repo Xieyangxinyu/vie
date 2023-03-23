@@ -8,10 +8,10 @@ import sys, os
 import time
 import matplotlib.pyplot as plt
 
-from utils import sample_cut, errors_regression
+from utils_mondrian import sample_cut, errors_regression
 
 def plot_spectrum(y, y_diag, title):
-    x = np.linspace(0, dim_in-1, dim_in)
+    x = np.linspace(0, len(y)-1, len(y))
 
     fig, ax = plt.subplots()
 
@@ -25,8 +25,8 @@ def plot_spectrum(y, y_diag, title):
 def compute_derivative(q_tilde, d_q_tilde):
     c = 0.5
     stable_sigmoid = lambda x: jnp.exp(jax.nn.log_sigmoid(c * x))
-    q = stable_sigmoid(q_tilde)
-    derivative = c * np.matmul(np.diag(np.exp(np.log(q) + np.log(1-q))), d_q_tilde)
+    q = 2 * stable_sigmoid(q_tilde)
+    derivative = 2 * c * np.matmul(np.diag(np.exp(np.log(q) + np.log(1-q))), d_q_tilde)
     return derivative
 
 def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta,
@@ -188,17 +188,24 @@ def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta,
     d_Z_active = d_Z_all[active_features]
     w_kernel_active = np.array(w_kernel)[active_features]
     #H_root = np.tensordot(w_kernel_active, d_Z_active)
-    print(d_Z_active.shape)
+    #print(d_Z_active.shape)
     d_Z_active = np.swapaxes(d_Z_active, 0,1)
     d_Z_active = np.swapaxes(d_Z_active, 1,2)
-    print(d_Z_active.shape)
-    print(w_kernel_active.shape)
+    #print(d_Z_active.shape)
+    #print(w_kernel_active.shape)
     H_root = np.matmul(d_Z_active, w_kernel_active)
+    print(H_root.shape)
+    grads = np.mean(np.abs(H_root), axis=0)
+    print(grads.shape)
+    plot_spectrum(grads, np.zeros(10), "grads")
     H = np.matmul(np.transpose(H_root), H_root)
+    print(H.shape)
+    #plt.imshow(H)
     eig = jnp.linalg.eig(H)[0]
+    #eig = jnp.sort(eig)[::-1]
     print(eig)
     y_diag = jnp.diagonal(H)
-    y_diag = jnp.sort(y_diag)[::-1]
+    #y_diag = jnp.sort(y_diag)[::-1]
     plot_spectrum(eig, y_diag, 'spectrum')
 
     # this function returns a dictionary with all values of interest stored in it
@@ -230,8 +237,11 @@ def prepare_training_data(data, n_obs):
     x_train, y_train, f_train = df_train, df_train.pop("y"), df_train.pop("f")
     x_test, y_test, f_test = df_test, df_test.pop("y"), df_test.pop("f")
 
+
     x_train = x_train.to_numpy()
+    x_train = x_train[:,:10]
     x_test = x_test.to_numpy()
+    x_test = x_test[:,:10]
 
     y_train = y_train.to_numpy().reshape(-1, 1).ravel()
     y_test = y_test.to_numpy().reshape(-1, 1).ravel()
@@ -244,8 +254,8 @@ if __name__ == "__main__":
     data_path = os.path.join("./datasets/")
     
     dataset_name = 'cont' # @param ['cat', 'cont', 'adult', 'heart', 'mi'] 
-    outcome_type = 'rbf' # @param ['linear', 'rbf', 'matern32', 'complex']
-    n_obs = 200 # @param [100, 200, 500, 1000]
+    outcome_type = 'linear' # @param ['linear', 'rbf', 'matern32', 'complex']
+    n_obs = 500 # @param [100, 200, 500, 1000]
     dim_in = 25 # @param [25, 50, 100, 200]
     rep = 1 # @param 
 
@@ -260,7 +270,7 @@ if __name__ == "__main__":
     M = 10                      # number of Mondrian trees to use
     lifetime_max = 0.001          # terminal lifetime
     weights_lifetime = 2*1e-6   # lifetime for which weights should be plotted
-    delta = 0.001              # ridge regression delta
+    delta = 0.000001              # ridge regression delta
     evaluate_all_lifetimes(x_train, y_train, x_test, y_test, M, lifetime_max, delta,
                                 weights_from_lifetime=weights_lifetime)
     

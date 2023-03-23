@@ -6,8 +6,9 @@ import numpy as np
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import ExtraTreesRegressor
 # local imports
+import sys
+sys.path.append("/Users/yangxinyuxie/Desktop/Mondrian Forests/vie/vie/")
 import util
-
 
 
 class fdt(object):
