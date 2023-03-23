@@ -6,7 +6,8 @@ import numpy as np
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import ExtraTreesRegressor
 # local imports
-import vie.util as util
+import util
+
 
 
 class fdt(object):
@@ -163,3 +164,13 @@ def get_fdt_model(x_train, y_train, c=1.0, sig2=0.01, n_tree=20, compute_psi=Tru
     print(f"Shapes: psi_est_all: {psi_est_all.shape}, grad_train: {grad_train.shape}, psi_est: {psi_est.shape}")
     return psi_est_all, f, grad_fs, out_set
 
+
+from sklearn import datasets
+from sklearn.model_selection import train_test_split
+
+
+if __name__ == "__main__":
+    diabetes = datasets.load_diabetes()
+    X, y = diabetes.data, diabetes.target
+    get_fdt_model(X[:10], y[:10], c=0.1, sig2=0.01, n_tree=10, 
+                            compute_psi=True, batch_size=100, n_samp=10, seed=0)
