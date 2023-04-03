@@ -7,6 +7,9 @@ import jax.numpy as jnp
 import sys, os
 import time
 import matplotlib.pyplot as plt
+from sklearn.metrics import roc_auc_score
+from jax import vmap
+
 
 from utils_mondrian import sample_cut, errors_regression
 
@@ -23,10 +26,11 @@ def plot_spectrum(y, y_diag, title):
     plt.show()
 
 def compute_derivative(q_tilde, d_q_tilde):
-    c = 0.5
+    c = 1
     stable_sigmoid = lambda x: jnp.exp(jax.nn.log_sigmoid(c * x))
     q = 2 * stable_sigmoid(q_tilde)
-    derivative = 2 * c * np.matmul(np.diag(np.exp(np.log(q) + np.log(1-q))), d_q_tilde)
+    temp = np.diag(q * (1-q))
+    derivative = 2 * c * np.matmul(temp, d_q_tilde)
     return derivative
 
 def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta,
@@ -66,7 +70,7 @@ def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta,
     indices = list(range(M)) * N_all
     data = np.ones(N_all * M) / np.sqrt(M)
     Z_all = scipy.sparse.csr_matrix((data, indices, indptr), shape=(N_all, M))
-    d_Z_all = np.zeros(shape=(M, N_all, D))
+    #d_Z_all = np.zeros(shape=(M, N_all, D))
     feature_from_repetition = list(range(M))
     C = M
 
@@ -78,6 +82,8 @@ def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta,
     # event = tuple (time, tree, feature, dim, loc), where feature is the index of feature being split
     events = []
     active_features = []
+    q_tilde_vec = np.zeros(shape=(M, N_all))
+    d_q_tilde_vec = np.zeros(shape=(M, N_all, D))
     active_features_in_tree = [[] for _ in range(M)]
     for m in range(M):
         cut_time, dim, loc = sample_cut(lX, uX, 0.0)
@@ -108,7 +114,6 @@ def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta,
         feature_r = (feature_data[c])[Xd  > loc]
         feature_data.append(feature_l)
         feature_data.append(feature_r)
-        
 
         active_features.remove(c)
         active_features_in_tree[m].remove(c)
@@ -117,13 +122,12 @@ def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta,
         active_features_in_tree[m].append(C + 0)
         active_features_in_tree[m].append(C + 1)
         
-        
         d_q_tilde_l = np.copy(d_q_tilde)
-        d_q_tilde_l[:, dim] = d_q_tilde[:, dim] - (np.abs(X_all[:, dim] - loc) < 1)
+        d_q_tilde_l[:, dim] = d_q_tilde[:, dim] - (np.abs(X_all[:, dim] - loc) < 0.1)
         q_tilde_l = q_tilde - np.sign(X_all[:, dim] - loc) - 1
 
         d_q_tilde_r = np.copy(d_q_tilde)
-        d_q_tilde_r[:, dim] = d_q_tilde[:, dim] + (np.abs(X_all[:, dim] - loc) < 1)
+        d_q_tilde_r[:, dim] = d_q_tilde[:, dim] + (np.abs(X_all[:, dim] - loc) < 0.1)
         q_tilde_r = q_tilde + np.sign(X_all[:, dim] - loc) - 1
 
         # move datapoints from split feature to child features
@@ -139,11 +143,15 @@ def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta,
         uX_r = np.max(X_all[feature_r, :], axis=0)
         cut_time_r, dim_r, loc_r = sample_cut(lX_r, uX_r, birth_time)
 
-        d_Z_l = compute_derivative(q_tilde_l, d_q_tilde_l)
-        d_Z_r = compute_derivative(q_tilde_r, d_q_tilde_r)
-        d_Z_all = np.stack([*d_Z_all,d_Z_l])
-        d_Z_all = np.stack([*d_Z_all,d_Z_r])
-        #print(d_Z_all)
+
+        q_tilde_vec = np.stack([*q_tilde_vec,q_tilde_l])
+        q_tilde_vec = np.stack([*q_tilde_vec,q_tilde_r])
+        d_q_tilde_vec = np.stack([*d_q_tilde_vec,d_q_tilde_l])
+        d_q_tilde_vec = np.stack([*d_q_tilde_vec,d_q_tilde_r])
+        #d_Z_l = compute_derivative(q_tilde_l, d_q_tilde_l)
+        #d_Z_r = compute_derivative(q_tilde_r, d_q_tilde_r)
+        #d_Z_all = np.stack([*d_Z_all,d_Z_l])
+        #d_Z_all = np.stack([*d_Z_all,d_Z_r])
 
         # add new cuts to heap
         if cut_time_l < lifetime_max:
@@ -185,28 +193,23 @@ def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta,
         #sys.stdout.write("\rTime: %.2E / %.2E (C = %d, test error = %.3f)" % (birth_time, lifetime_max, C, error_test))
         #sys.stdout.flush()
     
-    d_Z_active = d_Z_all[active_features]
+    d_Z_active = [compute_derivative(q_tilde_vec[i], d_q_tilde_vec[i]) for i in active_features]
+    d_Z_active = np.array(d_Z_active)
     w_kernel_active = np.array(w_kernel)[active_features]
-    #H_root = np.tensordot(w_kernel_active, d_Z_active)
-    #print(d_Z_active.shape)
+
     d_Z_active = np.swapaxes(d_Z_active, 0,1)
     d_Z_active = np.swapaxes(d_Z_active, 1,2)
-    #print(d_Z_active.shape)
-    #print(w_kernel_active.shape)
     H_root = np.matmul(d_Z_active, w_kernel_active)
-    print(H_root.shape)
-    grads = np.mean(np.abs(H_root), axis=0)
-    print(grads.shape)
-    plot_spectrum(grads, np.zeros(10), "grads")
     H = np.matmul(np.transpose(H_root), H_root)
-    print(H.shape)
-    #plt.imshow(H)
+    plt.imshow(H)
     eig = jnp.linalg.eig(H)[0]
     #eig = jnp.sort(eig)[::-1]
-    print(eig)
     y_diag = jnp.diagonal(H)
+    true = np.concatenate((np.repeat(1, 5), np.repeat(0, x_train.shape[1] - 5)))
+    
+    print(roc_auc_score(true, y_diag))
     #y_diag = jnp.sort(y_diag)[::-1]
-    plot_spectrum(eig, y_diag, 'spectrum')
+    #plot_spectrum(eig, y_diag, 'spectrum')
 
     # this function returns a dictionary with all values of interest stored in it
     results = {'times': list_times, 'runtimes': list_runtime, 'Z': Z_all, 'feature_from_repetition': np.array(feature_from_repetition)}
@@ -239,25 +242,25 @@ def prepare_training_data(data, n_obs):
 
 
     x_train = x_train.to_numpy()
-    x_train = x_train[:,:10]
+    #x_train = x_train[:,:10]
     x_test = x_test.to_numpy()
-    x_test = x_test[:,:10]
+    #x_test = x_test[:,:10]
 
     y_train = y_train.to_numpy().reshape(-1, 1).ravel()
     y_test = y_test.to_numpy().reshape(-1, 1).ravel()
     scaler = preprocessing.StandardScaler().fit(x_train)
-    x_train = scaler.transform(x_train) * 10
-    x_test = scaler.transform(x_test) * 10
+    x_train = scaler.transform(x_train) * 100
+    x_test = scaler.transform(x_test) * 100
     return x_train, y_train, x_test, y_test
 
 if __name__ == "__main__":
     data_path = os.path.join("./datasets/")
     
     dataset_name = 'cont' # @param ['cat', 'cont', 'adult', 'heart', 'mi'] 
-    outcome_type = 'linear' # @param ['linear', 'rbf', 'matern32', 'complex']
-    n_obs = 500 # @param [100, 200, 500, 1000]
+    outcome_type = 'rbf' # @param ['linear', 'rbf', 'matern32', 'complex']
+    n_obs = 200 # @param [100, 200, 500, 1000]
     dim_in = 25 # @param [25, 50, 100, 200]
-    rep = 1 # @param 
+    rep = 7 # @param 
 
     data_file = f"{outcome_type}_n{n_obs}_d{dim_in}_i{rep}.csv"
     data_file_path = os.path.join(data_path, dataset_name, data_file)
@@ -268,9 +271,9 @@ if __name__ == "__main__":
 
 
     M = 10                      # number of Mondrian trees to use
-    lifetime_max = 0.001          # terminal lifetime
+    lifetime_max = 0.0005          # terminal lifetime
     weights_lifetime = 2*1e-6   # lifetime for which weights should be plotted
-    delta = 0.000001              # ridge regression delta
+    delta = 0.00001              # ridge regression delta
     evaluate_all_lifetimes(x_train, y_train, x_test, y_test, M, lifetime_max, delta,
                                 weights_from_lifetime=weights_lifetime)
     
