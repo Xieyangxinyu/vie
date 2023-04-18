@@ -9,9 +9,13 @@ import time
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_auc_score
 from jax import vmap
+import pickle as pkl
 
 
 from utils_mondrian import sample_cut, errors_regression
+
+#np.random.seed(123)
+
 
 def plot_spectrum(y, y_diag, title):
     x = np.linspace(0, len(y)-1, len(y))
@@ -102,6 +106,7 @@ def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta,
     if validation:
         list_kernel_error_validation = []
     list_kernel_error_test = []
+    y_hat_test = np.zeros(80)
 
     while len(events) > 0:
         # event = tuple (time, tree, feature, dim, loc), where feature is the index of feature being split
@@ -109,6 +114,7 @@ def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta,
         list_times.append(birth_time)
         
         # construct new feature
+        #X_all = X_all + 1
         Xd = X_all[feature_data[c], dim]
         feature_l = (feature_data[c])[Xd <= loc]
         feature_r = (feature_data[c])[Xd  > loc]
@@ -123,11 +129,11 @@ def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta,
         active_features_in_tree[m].append(C + 1)
         
         d_q_tilde_l = np.copy(d_q_tilde)
-        d_q_tilde_l[:, dim] = d_q_tilde[:, dim] - (np.abs(X_all[:, dim] - loc) < 0.1)
+        d_q_tilde_l[:, dim] = d_q_tilde[:, dim] - (np.abs(X_all[:, dim] + - loc) < 1)
         q_tilde_l = q_tilde - np.sign(X_all[:, dim] - loc) - 1
 
         d_q_tilde_r = np.copy(d_q_tilde)
-        d_q_tilde_r[:, dim] = d_q_tilde[:, dim] + (np.abs(X_all[:, dim] - loc) < 0.1)
+        d_q_tilde_r[:, dim] = d_q_tilde[:, dim] + (np.abs(X_all[:, dim] - loc) < 1)
         q_tilde_r = q_tilde + np.sign(X_all[:, dim] - loc) - 1
 
         # move datapoints from split feature to child features
@@ -143,7 +149,7 @@ def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta,
         uX_r = np.max(X_all[feature_r, :], axis=0)
         cut_time_r, dim_r, loc_r = sample_cut(lX_r, uX_r, birth_time)
 
-
+        #X_all = X_all - 1
         q_tilde_vec = np.stack([*q_tilde_vec,q_tilde_l])
         q_tilde_vec = np.stack([*q_tilde_vec,q_tilde_r])
         d_q_tilde_vec = np.stack([*d_q_tilde_vec,d_q_tilde_l])
@@ -185,14 +191,15 @@ def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta,
             error_train, error_test = errors_regression(y, y_test, y_hat_train, y_hat_test)
         list_kernel_error_train.append(error_train)
         list_kernel_error_test.append(error_test)
+        error_test = np.mean((y_test - y_hat_test) ** 2)
 
         # save runtime
         list_runtime.append(time.process_time() - time_start)
 
         # progress indicator in console
-        #sys.stdout.write("\rTime: %.2E / %.2E (C = %d, test error = %.3f)" % (birth_time, lifetime_max, C, error_test))
+        #print(f"Time: {birth_time}/{lifetime_max} (C = {C}, test error = {error_test})")
         #sys.stdout.flush()
-    
+
     d_Z_active = [compute_derivative(q_tilde_vec[i], d_q_tilde_vec[i]) for i in active_features]
     d_Z_active = np.array(d_Z_active)
     w_kernel_active = np.array(w_kernel)[active_features]
@@ -201,15 +208,16 @@ def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta,
     d_Z_active = np.swapaxes(d_Z_active, 1,2)
     H_root = np.matmul(d_Z_active, w_kernel_active)
     H = np.matmul(np.transpose(H_root), H_root)
-    plt.imshow(H)
+    #plt.imshow(H)
     eig = jnp.linalg.eig(H)[0]
     #eig = jnp.sort(eig)[::-1]
     y_diag = jnp.diagonal(H)
     true = np.concatenate((np.repeat(1, 5), np.repeat(0, x_train.shape[1] - 5)))
     
     print(roc_auc_score(true, y_diag))
+    print(y_diag)
     #y_diag = jnp.sort(y_diag)[::-1]
-    #plot_spectrum(eig, y_diag, 'spectrum')
+    plot_spectrum(eig, y_diag, 'spectrum')
 
     # this function returns a dictionary with all values of interest stored in it
     results = {'times': list_times, 'runtimes': list_runtime, 'Z': Z_all, 'feature_from_repetition': np.array(feature_from_repetition)}
@@ -244,13 +252,20 @@ def prepare_training_data(data, n_obs):
     x_train = x_train.to_numpy()
     #x_train = x_train[:,:10]
     x_test = x_test.to_numpy()
+    #z_test = np.copy(x_test)
+    #z_test[:, 1] = z_test[:, 1] + 1
+    #x_test = np.vstack([x_test, z_test])
+    
     #x_test = x_test[:,:10]
 
     y_train = y_train.to_numpy().reshape(-1, 1).ravel()
     y_test = y_test.to_numpy().reshape(-1, 1).ravel()
+    #y_test = np.hstack([y_test, y_test])
+
     scaler = preprocessing.StandardScaler().fit(x_train)
-    x_train = scaler.transform(x_train) * 100
-    x_test = scaler.transform(x_test) * 100
+    x_train = scaler.transform(x_train) * 10
+    x_test = scaler.transform(x_test) * 10
+
     return x_train, y_train, x_test, y_test
 
 if __name__ == "__main__":
@@ -258,9 +273,9 @@ if __name__ == "__main__":
     
     dataset_name = 'cont' # @param ['cat', 'cont', 'adult', 'heart', 'mi'] 
     outcome_type = 'rbf' # @param ['linear', 'rbf', 'matern32', 'complex']
-    n_obs = 200 # @param [100, 200, 500, 1000]
+    n_obs = 1000 # @param [100, 200, 500, 1000]
     dim_in = 25 # @param [25, 50, 100, 200]
-    rep = 7 # @param 
+    rep =  # @param 
 
     data_file = f"{outcome_type}_n{n_obs}_d{dim_in}_i{rep}.csv"
     data_file_path = os.path.join(data_path, dataset_name, data_file)
@@ -270,10 +285,10 @@ if __name__ == "__main__":
     x_train, y_train, x_test, y_test = prepare_training_data(data, n_obs)
 
 
-    M = 10                      # number of Mondrian trees to use
-    lifetime_max = 0.0005          # terminal lifetime
+    M = 100                      # number of Mondrian trees to use
+    lifetime_max = 0.0003          # terminal lifetime
     weights_lifetime = 2*1e-6   # lifetime for which weights should be plotted
-    delta = 0.00001              # ridge regression delta
+    delta = 0.01              # ridge regression delta
     evaluate_all_lifetimes(x_train, y_train, x_test, y_test, M, lifetime_max, delta,
                                 weights_from_lifetime=weights_lifetime)
     
