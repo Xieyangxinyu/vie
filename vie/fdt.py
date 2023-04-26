@@ -164,7 +164,7 @@ def get_fdt_model(x_train, y_train, c=1.0, sig2=0.01, n_tree=20, compute_psi=Tru
         psi_est = np.median(grad_train, axis=0)
     print(f"Shapes: psi_est_all: {psi_est_all.shape}, grad_train: {grad_train.shape}, psi_est: {psi_est.shape}")
     #return psi_est_all, f, grad_fs, out_set
-    return psi_est, f, grad_fs, out_set
+    return psi_est, f, grad_fs, out_set, extra
 
 
 from sklearn import datasets
