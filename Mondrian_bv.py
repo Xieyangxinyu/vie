@@ -297,13 +297,13 @@ if __name__ == "__main__":
     x_train, y_train, x_test, y_test = prepare_training_data(data, n_obs)
     '''
     n = 1000
-    dim_in = 25
+    dim_in = 10
     x_train = np.random.rand(n,dim_in)*2 - 1
     y_train = simulate_y(x_train)
 
 
     M = 200                      # number of Mondrian trees to use
-    lifetime_max = n * 0.2 * 0.05          # terminal lifetime
+    lifetime_max = 0.2          # terminal lifetime
     weights_lifetime = 2*1e-6   # lifetime for which weights should be plotted
     delta = 0.1              # ridge regression delta
     result, X_bd_all, X, history, w_kernel, y_hat_train = train(x_train, y_train, M, lifetime_max, delta, mondrian_kernel = True,
