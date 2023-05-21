@@ -275,7 +275,7 @@ if __name__ == "__main__":
     outcome_type = 'rbf' # @param ['linear', 'rbf', 'matern32', 'complex']
     n_obs = 1000 # @param [100, 200, 500, 1000]
     dim_in = 25 # @param [25, 50, 100, 200]
-    rep =  # @param 
+    rep =  0# @param 
 
     data_file = f"{outcome_type}_n{n_obs}_d{dim_in}_i{rep}.csv"
     data_file_path = os.path.join(data_path, dataset_name, data_file)
