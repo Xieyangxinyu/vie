@@ -302,8 +302,8 @@ if __name__ == "__main__":
     y_train = simulate_y(x_train)
 
 
-    M = 200                      # number of Mondrian trees to use
-    lifetime_max = 0.2          # terminal lifetime
+    M = 100                      # number of Mondrian trees to use
+    lifetime_max = 0.05          # terminal lifetime
     weights_lifetime = 2*1e-6   # lifetime for which weights should be plotted
     delta = 0.1              # ridge regression delta
     result, X_bd_all, X, history, w_kernel, y_hat_train = train(x_train, y_train, M, lifetime_max, delta, mondrian_kernel = True,
