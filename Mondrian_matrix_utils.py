@@ -6,6 +6,7 @@ from copy import deepcopy
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
 from utils_mondrian import sample_cut
+from numpy.linalg import norm
 
 
 def train(X, y, M, lifetime_max, delta,
@@ -276,6 +277,9 @@ def plot_spectrum(y, y_diag, title):
     plt.title(title)
     plt.show()
 
+def two_one_norm(H):
+    return np.sum(np.apply_along_axis(norm, 0, H)) / H.shape[1]
+
 def simulate(x_train, y_train, x_test, y_test, M,  lifetime_max, delta, weights_lifetime):
 
     X_bd_all, X, history, w_kernel, y_hat_train = train(x_train, y_train, M, lifetime_max, delta, mondrian_kernel = True,
@@ -320,7 +324,7 @@ def simulate(x_train, y_train, x_test, y_test, M,  lifetime_max, delta, weights_
 
     H = np.matmul(importance, np.transpose(importance))
 
-    H = H * len(H) / np.trace(H)
+    H = H / two_one_norm(H)
     
     eig = np.linalg.eig(H)[0]
     y_diag = np.diagonal(H)
@@ -350,6 +354,25 @@ def simulate_best(x_train, y_train, x_test, y_test, M,  lifetime_max, delta, wei
                                 weights_from_lifetime=weights_lifetime)
 
     _, y_hat_test = evaluate(x_train, y_train, x_test, M, delta, history, w_kernel, mondrian_kernel = True, 
+                                weights_from_lifetime=weights_lifetime)
+
+    mse_best = mean_squared_error(y_test, y_hat_test)
+
+    return mse_best
+
+
+def simulate_proj(x_train, y_train, x_test, y_test, M, lifetime_max, delta, weights_lifetime):
+    dim_in = x_train.shape[1]
+    dim_proj = 5
+    H = np.identity(dim_proj)
+    H = np.pad(H, [(0, dim_in - dim_proj), (0, dim_in - dim_proj)], mode='constant')
+    H = H / two_one_norm(H)
+    x_train_transformed = np.matmul(x_train, H)
+    x_test_transformed = np.matmul(x_test, H)
+    _, _, history, w_kernel, _ = train(x_train_transformed, y_train, M, lifetime_max, delta, mondrian_kernel = True,
+                                weights_from_lifetime=weights_lifetime)
+
+    _, y_hat_test = evaluate(x_test_transformed, y_train, x_test_transformed, M, delta, history, w_kernel, mondrian_kernel = True, 
                                 weights_from_lifetime=weights_lifetime)
 
     mse_best = mean_squared_error(y_test, y_hat_test)
