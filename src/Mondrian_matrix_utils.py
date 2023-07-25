@@ -5,9 +5,27 @@ from sklearn import linear_model
 from copy import deepcopy
 from sklearn.metrics import mean_squared_error
 import matplotlib.pyplot as plt
-from utils_mondrian import sample_cut
 from numpy.linalg import norm
 
+
+# SAMPLING
+def sample_discrete(weights):
+    cumsums = np.cumsum(weights)
+    cut = cumsums[-1] * np.random.rand()
+    return np.searchsorted(cumsums, cut)
+
+
+def sample_cut(lX, uX, birth_time):
+    rate = np.sum(uX - lX)
+    if rate > 0:
+        E = np.random.exponential(scale=1.0/rate)
+        cut_time = birth_time + E
+        dim = sample_discrete(uX - lX)
+        loc = lX[dim] + (uX[dim] - lX[dim]) * np.random.rand()
+        return cut_time, dim, loc
+    else:
+        return np.Infinity, None, None
+    
 
 def train(X, y, M, lifetime_max, delta,
           mondrian_kernel=False, mondrian_forest=False, weights_from_lifetime=None, importance = True):
@@ -361,11 +379,13 @@ def simulate_best(x_train, y_train, x_test, y_test, M,  lifetime_max, delta, wei
     return mse_best
 
 
-def simulate_proj(x_train, y_train, x_test, y_test, M, lifetime_max, delta, weights_lifetime):
+def simulate_proj(x_train, y_train, x_test, y_test, M, lifetime_max, delta, weights_lifetime, rotation = None):
     dim_in = x_train.shape[1]
     dim_proj = 5
     H = np.identity(dim_proj)
     H = np.pad(H, [(0, dim_in - dim_proj), (0, dim_in - dim_proj)], mode='constant')
+    if rotation is not None:
+        H = np.matmul(rotation, H)
     H = H / two_one_norm(H)
     x_train_transformed = np.matmul(x_train, H)
     x_test_transformed = np.matmul(x_test, H)
