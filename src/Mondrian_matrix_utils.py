@@ -193,12 +193,6 @@ def evaluate(X, y, X_test, M, delta, history, w_kernel,
     data = np.ones(N_all * M) / np.sqrt(M)
     Z_all = scipy.sparse.csr_matrix((data, indices, indptr), shape=(N_all, M))
     C = M
-
-    # iterate through birth times in increasing order
-    if mondrian_forest:
-        w_trees = [np.zeros(1) for _ in range(M)]
-        trees_y_hat_train = np.zeros((N, M))        # initialize Mondrian tree predictions and squared errors
-        trees_y_hat_test = np.zeros((N_test, M))
     
     feature_data = [np.array(range(N_all)) for _ in range(M)]
     active_features = []
@@ -230,23 +224,6 @@ def evaluate(X, y, X_test, M, delta, history, w_kernel,
         Z_all = scipy.sparse.csr_matrix((Z_all.data, Z_all.indices, Z_all.indptr), shape=(N_all, C + 2), copy=False)
 
         C += 2
-
-        if mondrian_forest:
-            # update Mondrian forest predictions in tree m
-            Z_train = Z_all[:N, active_features_in_tree[m]]
-            Z_test = Z_all[N:, active_features_in_tree[m]]
-            w_tree = np.linalg.solve(np.transpose(Z_train).dot(Z_train) + delta / M * np.identity(len(active_features_in_tree[m])),
-                                np.transpose(Z_train).dot(y_train))
-            if weights_from_lifetime is not None and birth_time <= weights_from_lifetime:
-                w_trees[m] = w_tree / np.sqrt(M)
-            trees_y_hat_train[:, m] = np.squeeze(Z_train.dot(w_tree))
-            trees_y_hat_test[:, m] = np.squeeze(Z_test.dot(w_tree))
-
-            # update Mondrian forest error
-            y_hat_train = y_mean + np.mean(trees_y_hat_train, 1)
-            y_hat_test = y_mean + np.mean(trees_y_hat_test, 1)
-
-        # update Mondrian kernel predictions
     
     if mondrian_kernel:
         Z_train = Z_all[:N]
@@ -363,7 +340,7 @@ def simulate(x_train, y_train, x_test, y_test, M,  lifetime_max, delta, weights_
 
     print(f"Test mean squared error after transformation: {mse_after}")
 
-    return mse_before, mse_after
+    return mse_before, mse_after, H
 
 def simulate_best(x_train, y_train, x_test, y_test, M,  lifetime_max, delta, weights_lifetime):
     x_train = x_train[:, 0:5]
