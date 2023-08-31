@@ -304,9 +304,16 @@ def simulate(x_train, y_train, x_test, y_test, M,  lifetime_max, delta, weights_
         _, y_hat_eval = evaluate(x_train, y_train, x_eval, M, delta, history, w_kernel, mondrian_kernel = True, 
                                 weights_from_lifetime=weights_lifetime)
         
-        importance_temp = populate_importance(subset_all, ((y_eval - y_hat_eval)/x_diff))
-        importance_temp = np.reshape(importance_temp, (len(X), M))
-        importance_temp = np.median(importance_temp, axis = 1)
+        y_diff = populate_importance(subset_all, (y_eval - y_hat_eval))
+        x_diff = populate_importance(subset_all, x_diff)
+        y_diff = np.reshape(y_diff, (len(X), M))
+        x_diff = np.reshape(x_diff, (len(X), M))
+        y_diff = np.median(y_diff, axis = 1)
+        x_diff = np.median(x_diff, axis = 1)
+        #importance_temp = populate_importance(subset_all, ((y_eval - y_hat_eval)/x_diff))
+        #importance_temp = np.reshape(importance_temp, (len(X), M))
+        #importance_temp = np.median(importance_temp, axis = 1)
+        importance_temp = y_diff/x_diff
         importance.append(importance_temp)
     importance = np.vstack(importance)
 
