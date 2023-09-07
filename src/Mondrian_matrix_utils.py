@@ -156,7 +156,7 @@ def train(X, y, M, lifetime_max, delta,
     return X_bd_all, X, history, w_kernel, y_hat_train
 
 def evaluate(X, y, X_test, M, delta, history, w_kernel,
-             mondrian_kernel=False, mondrian_forest=False, weights_from_lifetime=None,):
+             mondrian_kernel=False, mondrian_forest=False):
     """
     Sweeps through Mondrian kernels with all lifetime in [0, lifetime_max]. This can be used to (1) construct a Mondrian
     feature map with lifetime lifetime_max, to (2) find a suitable lifetime (inverse kernel width), or to (3) compare
