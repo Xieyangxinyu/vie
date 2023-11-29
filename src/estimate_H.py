@@ -4,7 +4,7 @@ from sklearn.metrics import mean_squared_error
 from tqdm import tqdm
 from copy import deepcopy
 import numpy as np
-from src.Mondrian_forest import evaluate
+from Mondrian_forest import evaluate
 
 def estimate_H_finite_diff(X, y_train, M, history, w_trees, step = 0.5):
     X = np.array(X)
