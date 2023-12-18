@@ -16,9 +16,6 @@ from sklearn.preprocessing import MinMaxScaler
 
 from dataset import (
     load_abalone,
-    load_bodyfat,
-    load_cpu_small,
-    load_fishcatch,
     load_kin8nm,
     load_openml,
     load_diabetes
@@ -27,17 +24,10 @@ from dataset import (
 
 DATASETS = {
     'abalone': load_abalone,
-    'bodyfat': load_bodyfat,
     'diabetes': load_diabetes,
     'autoprice': partial(load_openml, name='autoPrice'),
-    'puma8NH': partial(load_openml, name='puma8NH'),
-    'puma32H': partial(load_openml, name='puma32H'),
-    'liver': partial(load_openml, name='liver-disorders'),
     'mu284': partial(load_openml, name='mu284'),
-    'wisconsin': partial(load_openml, name='wisconsin'),
-    'fishcatch': load_fishcatch,
     'bank8FM': partial(load_openml, name='bank8FM'),
-    'cpu' : load_cpu_small,
     'kin8nm' : load_kin8nm,
 }
 
@@ -65,11 +55,11 @@ def benchmark(dataset, n_resamples=15, n_splits=10):
     }
 
     mf_parameters = {
-        'lifetime': [1, 2, 3, 5, 7, 10]
+        'lifetime': [1, 2, 3, 4, 5]
     }
 
     mft_parameters = {
-        'step_size': [0.05, 0.1, 0.2],
+        'step_size': [0.1, 0.2, 0.5],
         'iteration': [1, 2]
     }
 
@@ -139,14 +129,14 @@ def benchmark(dataset, n_resamples=15, n_splits=10):
             print("Mondrian Forest")
             
             mf = MondrianForestRegressor(n_estimators=n_estimators, random_state=123)
-            clf = GridSearchCV(mf, mf_parameters).fit(X_train, y_train)
+            clf = GridSearchCV(mf, mf_parameters, n_jobs=-1).fit(X_train, y_train)
             y_pred = clf.predict(X_test)
             err = np.mean((y_pred - y_test)**2)
             results['mf'][k] = err
             print(clf.best_params_)
             print(err)
 
-
+            lifetime = clf.best_params_['lifetime']
             mft = MondrianForestTransformer(mf = clf.best_estimator_)
             clf = GridSearchCV(mft, mft_parameters, n_jobs=-1).fit(X_train, y_train)
             y_pred = clf.predict(X_test)
@@ -165,3 +155,8 @@ def benchmark(dataset, n_resamples=15, n_splits=10):
 
 if __name__ == '__main__':
     benchmark('abalone')
+    benchmark('diabetes')
+    benchmark('autoprice')
+    benchmark('mu284')
+    benchmark('bank8FM')
+    benchmark('kin8nm')
