@@ -1,17 +1,15 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.metrics import mean_squared_error
 from tqdm import tqdm
 from copy import deepcopy
 import numpy as np
 from Mondrian_forest import evaluate
 
-def estimate_H_finite_diff(X, y_train, M, history, w_trees, step = 0.5):
+
+def estimate_H_finite_diff(X, y_train, M, history, w_trees, step_size = 0.5):
     X = np.array(X)
     dim_in = X.shape[1]
     N = X.shape[0]
     importance = []
-    x_diff = step / 2.0
+    x_diff = step_size / 2.0
     for dim in range(dim_in):
         x_eval_pos = deepcopy(X)
         x_eval_neg = deepcopy(X)
@@ -21,7 +19,7 @@ def estimate_H_finite_diff(X, y_train, M, history, w_trees, step = 0.5):
         y_eval_pos = evaluate(y_train, x_eval_pos, M, history, w_trees)
         y_eval_neg = evaluate(y_train, x_eval_neg, M, history, w_trees)
         y_diff = y_eval_pos - y_eval_neg
-        importance_temp = y_diff/x_diff
+        importance_temp = y_diff/step_size
         
         importance.append(importance_temp)
     importance = np.vstack(importance)

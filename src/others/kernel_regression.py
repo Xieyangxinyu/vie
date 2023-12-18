@@ -138,9 +138,7 @@ class KernelRegression(BaseEstimator, RegressorMixin):
         return gamma_values[np.nanargmin(mse)]
 
 
-def fit_kernel_smoother_silverman(X, y, feature_type='raw',
-                                  n_gammas='silverman', kernel='rbf',
-                                  random_state=123):
+def fit_kernel_smoother_silverman(X, y, feature_type='raw',kernel='rbf'):
 
     if feature_type == 'sir':
         kernel_smoother = Pipeline([

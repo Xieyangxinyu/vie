@@ -66,14 +66,10 @@ def benchmark(dataset, n_resamples=15, n_splits=10):
             for max_features in max_feature_params:
                 results['rf (l={},p={})'.format(min_samples_leaf, max_features)] = (
                     np.zeros(n_splits))
-                results['drrf (l={},p={})'.format(min_samples_leaf, max_features)] = (
-                    np.zeros(n_splits))
                 results['sir_rf (l={},p={})'.format(min_samples_leaf, max_features)] = (
                     np.zeros(n_splits))
                 results['save_rf (l={},p={})'.format(min_samples_leaf, max_features)] = (
                     np.zeros(n_splits))
-
-
 
         for k, (train, test) in enumerate(cv.split(X)):
             X_train, X_test, y_train, y_test = X[train], X[test], y[train], y[test]

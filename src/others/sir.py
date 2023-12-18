@@ -11,6 +11,10 @@ from sklearn.utils import check_array, check_X_y
 from sklearn.utils.validation import check_is_fitted
 
 from .slices import slice_y, grouped_sum, is_multioutput
+from numpy.linalg import norm
+
+def two_one_norm(H):
+    return np.sum(np.apply_along_axis(norm, 0, H)) / H.shape[1]
 
 __all__ = ['SlicedInverseRegression']
 
@@ -273,4 +277,4 @@ class SlicedInverseRegression(BaseEstimator, TransformerMixin):
         check_is_fitted(self)
 
         X = check_array(X)
-        return np.dot(X, self.directions_.T)
+        return np.dot(X, self.directions_.T/two_one_norm(self.directions_.T))

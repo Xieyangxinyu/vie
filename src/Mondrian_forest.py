@@ -141,7 +141,7 @@ def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta):
         C += 2
         Z_train = Z_all[:N, active_features_in_tree[m]]
         Z_test = Z_all[N:, active_features_in_tree[m]]
-        if counter % 10 == 0:
+        if counter % 50 == 0:
             w_tree = np.linalg.solve(np.transpose(Z_train).dot(Z_train) + delta / M * np.identity(len(active_features_in_tree[m])),
                                 np.transpose(Z_train).dot(y_train))
             trees_y_hat_test[:, m] = np.squeeze(Z_test.dot(w_tree))
