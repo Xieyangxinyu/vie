@@ -14,7 +14,11 @@ class MondrianForestRegressor(RegressorMixin):
         self.w_trees = []
         self.X = None
         self.y = None
-        self.rng = check_random_state(random_state)
+        self.random_state = random_state
+        self.set_random_state()
+
+    def set_random_state(self):
+        self.rng = check_random_state(self.random_state)
 
     def fit(self, X, y):
         self.X = X
@@ -72,6 +76,7 @@ class MondrianForestTransformer(RegressorMixin):
     def fit(self, X, y):
         self.X = np.array(X)
         self.y = y
+        self.mf.set_random_state()
         self.mf.fit(X, y)
         if self.iteration > 0:
             self.H = self.estimate_H_finite_diff()
