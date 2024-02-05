@@ -3,15 +3,16 @@ import numpy as np
 import scipy.sparse
 from copy import deepcopy
 from numpy.linalg import norm
+from sklearn.metrics import mean_squared_error
 
-def train(X, y, M, lifetime_max, delta, rng):
+def train(X, y, M, lifetime_max, rng, delta=0):
     """
     Trains a Mondrian kernel with M trees and lifetime lifetime_max.
     :param X:               training inputs
     :param y:               training regression targets
     :param M:               number of Mondrian trees
     :param lifetime_max:    terminal lifetime
-    :param delta:           ridge regression regularization hyperparameter
+    :param rng:           random number generator
     :return: history, w_trees
     :history: list of tuples (birth_time, tree, feature, dim, loc), where feature is the index of feature being split
     :w_trees: list of weights for each tree
@@ -179,7 +180,7 @@ def sample_cut(lX, uX, birth_time, rng):
 def two_one_norm(H):
     return np.sum(np.apply_along_axis(norm, 0, H)) / H.shape[1]
 
-def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta, rng = np.random):
+def evaluate_all_lifetimes(X, y, X_test, y_test, M, lifetime_max, delta=0, rng = np.random):
     """
     Sweeps through Mondrian kernels with all lifetime in [0, lifetime_max]. This can be used to (1) construct a Mondrian
     feature map with lifetime lifetime_max, to (2) find a suitable lifetime (inverse kernel width), or to (3) compare

@@ -3,3 +3,4 @@ datasets/*
 .venv/*
 __pycache__
 real_data_results/*
+.DS_store

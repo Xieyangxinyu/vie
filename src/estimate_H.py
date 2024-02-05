@@ -36,7 +36,7 @@ def get_H_estimates(stats, X, y_train, M, sample_range, tries = 10):
         for trial in tqdm(range(tries)):
             history, w_trees = \
                 stats[i]['history'][trial]
-            H_0 = estimate_H_finite_diff(X[:n_sim], y_train, M, history, w_trees)
+            H_0 = estimate_H_finite_diff(X[:n_sim], y_train[:n_sim], M, history, w_trees)
             dist['H'].append(H_0)
         H_est.append(dist)
     return H_est

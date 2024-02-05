@@ -87,7 +87,6 @@ def benchmark(dataset, n_resamples=15, n_splits=10):
             scaler.fit(X_train)
             X_train = scaler.transform(X_train)
             X_test = scaler.transform(X_test)
-
             print("Mean Only")
             err = np.mean((y_test - np.mean(y_train))**2)
             results['mean'][k] = err
@@ -136,7 +135,6 @@ def benchmark(dataset, n_resamples=15, n_splits=10):
             print(clf.best_params_)
             print(err)
 
-            lifetime = clf.best_params_['lifetime']
             mft = MondrianForestTransformer(mf = clf.best_estimator_)
             clf = GridSearchCV(mft, mft_parameters, n_jobs=-1).fit(X_train, y_train)
             y_pred = clf.predict(X_test)

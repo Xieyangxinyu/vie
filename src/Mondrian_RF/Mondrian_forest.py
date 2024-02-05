@@ -6,10 +6,9 @@ from sklearn.utils.validation import check_random_state
 
 class MondrianForestRegressor(RegressorMixin):
 
-    def __init__(self, n_estimators = 10, lifetime = 1, delta = 0, random_state = 42) -> None:
+    def __init__(self, n_estimators = 10, lifetime = 1, random_state = 42) -> None:
         self.n_estimators = n_estimators
         self.lifetime = lifetime
-        self.delta = delta
         self.history = []
         self.w_trees = []
         self.X = None
@@ -23,7 +22,7 @@ class MondrianForestRegressor(RegressorMixin):
     def fit(self, X, y):
         self.X = X
         self.y = y
-        self.history, self.w_trees = train(X, y, self.n_estimators, self.lifetime, self.delta, self.rng)
+        self.history, self.w_trees = train(X, y, self.n_estimators, self.lifetime, self.rng)
         return self
     
     def predict(self, X):
@@ -36,17 +35,16 @@ class MondrianForestRegressor(RegressorMixin):
 
     def get_params(self, deep=True):
         return {"n_estimators": self.n_estimators, 
-                "lifetime": self.lifetime, 
-                "delta": self.delta
+                "lifetime": self.lifetime,
                 }
 
 
 class MondrianForestTransformer(RegressorMixin):
 
     def __init__(self, mf: MondrianForestRegressor = None,
-                  n_estimators = 10, lifetime = 1, delta = 0, iteration = 1, step_size = 0.1) -> None:
+                  n_estimators = 10, lifetime = 1, iteration = 1, step_size = 0.1, random_state = 42) -> None:
         if mf is None:
-            self.mf = MondrianForestRegressor(n_estimators, lifetime, delta)
+            self.mf = MondrianForestRegressor(n_estimators, lifetime, random_state = random_state)
         else:
             self.mf = mf
         self.step_size = step_size
@@ -101,7 +99,7 @@ class MondrianForestTransformer(RegressorMixin):
     
     def set_params(self, **params):
         for key, value in params.items():
-            if key in ["n_estimators", "lifetime", "delta"]:
+            if key in ["n_estimators", "lifetime"]:
                 setattr(self.mf, key, value)
             else:
                 setattr(self, key, value)
@@ -110,6 +108,5 @@ class MondrianForestTransformer(RegressorMixin):
     def get_params(self, deep=True):
         return {"n_estimators": self.mf.n_estimators, 
                 "lifetime": self.mf.lifetime, 
-                "delta": self.mf.delta,
                 "step_size": self.step_size
                 }
