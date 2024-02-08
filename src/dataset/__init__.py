@@ -1,8 +1,9 @@
-from dataset.abalone import load_abalone
-from dataset.athletes import load_athletes
-from dataset.bodyfat import load_bodyfat
-from dataset.cpu_small import load_cpu_small
-from dataset.diabetes import load_diabetes
-from dataset.fishcatch import load_fishcatch
-from dataset.kin8nm import load_kin8nm
-from dataset.openml import load_openml
+from abalone import load_abalone
+from diabetes import load_diabetes
+from kin8nm import load_kin8nm
+from openml import load_openml
+
+
+if __name__ == '__main__':
+    data = load_openml("kin8nm")
+    print(data[0].shape)

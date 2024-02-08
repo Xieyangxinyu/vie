@@ -330,3 +330,11 @@ def gauss_legendre(N):
         x, w = np.atleast_2d(x[:,1:]), mi.atleast_2d_col(w)
 
     return x, w
+
+
+if __name__ == "__main__":
+    lb_L = np.array([.1, .1, .05, .41, .0276, .081, .25, .0833])
+    ub_L = np.array([.4, .4, .2, 1, .1702, .21, .5, .7])
+    xx, w = gauss_legendre([8, 8, 8, 8, 8, 8, 8, 8])
+    x_L = lb_L + (ub_L - lb_L)/2.*(xx + 1)
+    print(x_L.shape)

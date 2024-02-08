@@ -1,7 +1,5 @@
-import csv
 from os.path import dirname
-
-from dataset.base import load_data
+from base import load_data
 
 
 __all__ = ['load_kin8nm']
