@@ -8,6 +8,7 @@ from numpy.linalg import qr, svd, eig
 from tqdm import tqdm
 from Mondrian_RF.Mondrian_forest import MondrianForestTransformer
 from Mondrian_RF.utils import evaluate_all_lifetimes, two_one_norm
+from matplotlib.ticker import ScalarFormatter
 
 
 def plot_trend(stats, x_axis, y_axis, xlabel = None, ylabel = None):
@@ -26,8 +27,10 @@ def plot_trend(stats, x_axis, y_axis, xlabel = None, ylabel = None):
 
     # set y range to 0-1.6
     plt.ylim(0, 1.6)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    plt.xlabel(xlabel, fontsize=15)
+    plt.ylabel(ylabel, fontsize=15)
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
 
 def get_eigvectors(A):
     eigenValues, eigenVectors = eig(A)
@@ -61,7 +64,7 @@ def plot_dist(forests, true_H, sample_range, active, tries):
             H_0 = forests[n_sim][trial].H
             dist['dist'].append(get_angle_distance(H_0, true_H, active))
         plot_data.append(dist)
-    plot_trend(plot_data, 'n', 'dist', ylabel='Distance from the True H')
+    plot_trend(plot_data, 'n', 'dist', xlabel = 'Sample Size n', ylabel='Angle Distance from the True H')
 
 
 class SimulatedData:
@@ -164,7 +167,19 @@ class Simulation():
         plt.plot(self.evaluation_results[0][0]['times'], self.evaluation_results[0][0]['mse'], label = 'no transformation')
         plt.plot(self.evaluation_results[1][0]['times'], self.evaluation_results[1][0]['mse'], label = 'transform by true H')
         plt.plot(self.evaluation_results[2][0]['times'], self.evaluation_results[2][0]['mse'], label = 'transform by estimated H')
-        plt.legend()
+        # add labels 
+        plt.xlabel('Lifetime', fontsize=15)
+        plt.ylabel('MSE', fontsize=15)
+        plt.xticks(fontsize=15)
+        plt.yticks(fontsize=15)
+        # Change the font size of the legend
+        plt.legend(fontsize=12)
+        y_formatter = ScalarFormatter(useOffset=False)
+        y_formatter.set_scientific(True)
+        y_formatter.set_powerlimits((-1,1)) # Optional: adjust the range for using scientific notation
+
+        # Apply the formatter to the y-axis
+        plt.gca().yaxis.set_major_formatter(y_formatter)
 
     def reiterate(self):
         for n_sim in self.sample_range:
@@ -187,4 +202,16 @@ class Simulation():
         plt.plot(self.evaluation_results[1][0]['times'], self.evaluation_results[1][0]['mse'], label = 'transform by true H')
         plt.plot(self.evaluation_results[2][0]['times'], self.evaluation_results[2][0]['mse'], label = 'transform by estimated H - 1st')
         plt.plot(self.evaluation_results[3][0]['times'], self.evaluation_results[3][0]['mse'], label = 'transform by estimated H - 2nd')
-        plt.legend()
+        # add labels
+
+        plt.xlabel('Lifetime', fontsize=15)
+        plt.ylabel('MSE', fontsize=15)
+        plt.xticks(fontsize=15)
+        plt.yticks(fontsize=15)
+        plt.legend(fontsize=12)
+        y_formatter = ScalarFormatter(useOffset=False)
+        y_formatter.set_scientific(True)
+        y_formatter.set_powerlimits((-1,1)) # Optional: adjust the range for using scientific notation
+
+        # Apply the formatter to the y-axis
+        plt.gca().yaxis.set_major_formatter(y_formatter)
