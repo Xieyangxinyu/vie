@@ -61,8 +61,14 @@ class MondrianForestTransformer(RegressorMixin):
             x_eval_neg = deepcopy(self.X)
             x_eval_pos[:,dim] = x_eval_pos[:,dim] + self.step_size / 2.0
             x_eval_neg[:,dim] = x_eval_neg[:,dim] - self.step_size / 2.0
-            y_eval_pos = self.mf.predict(x_eval_pos)
-            y_eval_neg = self.mf.predict(x_eval_neg)
+
+
+            #y_eval_pos = self.mf.predict(x_eval_pos)
+            #y_eval_neg = self.mf.predict(x_eval_neg)
+            y_eval_pos = self.mf.predict(self.transform(x_eval_pos))
+            y_eval_neg = self.mf.predict(self.transform(x_eval_neg))
+
+
             y_diff = y_eval_pos - y_eval_neg
             importance_temp = y_diff/self.step_size
             importance.append(importance_temp)
@@ -81,14 +87,19 @@ class MondrianForestTransformer(RegressorMixin):
             for _ in range(self.iteration - 1):
                 self.reiterate()
             self.mf.fit(self.transform(deepcopy(self.X)), self.y)
+        
+
         return self
 
     def reiterate(self):
         X = self.transform(deepcopy(self.X))
         self.mf.fit(X, self.y)
-        self.H = np.matmul(self.H, self.estimate_H_finite_diff())
+        #self.H = np.matmul(self.H, self.estimate_H_finite_diff())
+        self.H = self.estimate_H_finite_diff()
     
     def transform(self, X):
+        if self.H is None:
+            return X
         return np.matmul(X, self.H / two_one_norm(self.H))
     
     def predict(self, X):
