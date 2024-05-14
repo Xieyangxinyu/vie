@@ -1,5 +1,5 @@
 from os.path import dirname
-from base import load_data
+from .base import load_data
 
 
 __all__ = ['load_kin8nm']
